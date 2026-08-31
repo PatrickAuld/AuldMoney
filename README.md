@@ -12,16 +12,32 @@ A private, mobile-first family ledger running on Cloudflare Workers and D1.
 
 ## One-time Cloudflare setup
 
-Authenticate Wrangler, then create the database:
+Authenticate Wrangler, apply migrations, and add the bootstrap parent:
 
 ```bash
 npx wrangler login
-npm run db:create
+npm ci
+npm run db:migrate:remote
+npm run db:add-parent -- patrick@patrickauld.com
 ```
 
-The database UUID is not a secret. `scripts/resolve-d1.mjs` discovers it by name during authenticated Cloudflare builds and replaces the inert UUID in `wrangler.jsonc` before deployment.
+The D1 database already exists and its non-secret UUID is committed in
+`wrangler.jsonc`. The add-parent command is idempotent, so it is safe to run
+again.
 
-Create a Cloudflare Access self-hosted application for the Worker hostname. Configure an identity provider such as One-time PIN or Google, and use an Access policy that permits authentication. AuldMoney performs the final parent-email authorization itself.
+### Login
+
+In the Cloudflare dashboard, open **Workers & Pages → auldmoney → Access** and
+protect both production and previews. Create an **Allow** policy whose email is
+`patrick@patrickauld.com`. Enable **One-time PIN** as the identity provider if
+you do not already use Google or another provider. The Worker forwards the
+verified Access identity into the app, and AuldMoney additionally checks the D1
+parent allowlist.
+
+Open <https://auldmoney.mandias.workers.dev>. Cloudflare will email the login
+code. The app also bootstraps this email automatically when the parent table is
+empty, so the explicit add-parent command above is defensive rather than
+required.
 
 ## Development
 
@@ -45,8 +61,6 @@ For Workers Builds, use:
 
 - Build command: `npm run build`
 - Deploy command: `npm run db:migrate:remote && npm run deploy:built`
-
-The build resolves the D1 UUID using the API token Cloudflare creates for Workers Builds. If you prefer explicit configuration, add `D1_DATABASE_ID` as a build variable, not a secret.
 
 ## Runtime secrets
 

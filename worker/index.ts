@@ -18,6 +18,10 @@ interface Env {
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
+  access?: {
+    aud: string;
+    getIdentity(): Promise<{ email?: string | null } | null>;
+  };
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -39,6 +43,17 @@ const worker = {
           return result.response();
         },
       }, allowedWidths);
+    }
+
+    // Worker-level Cloudflare Access exposes the verified identity on ctx.access.
+    // Forward it as the standard Access email header consumed by the Next app.
+    if (ctx.access && !request.headers.has("cf-access-authenticated-user-email")) {
+      const identity = await ctx.access.getIdentity();
+      if (identity?.email) {
+        const headers = new Headers(request.headers);
+        headers.set("cf-access-authenticated-user-email", identity.email);
+        request = new Request(request, { headers });
+      }
     }
 
     return handler.fetch(request, env, ctx);

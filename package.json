@@ -7,9 +7,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/resolve-d1.mjs --optional",
     "build": "vite build",
-    "deploy": "node scripts/resolve-d1.mjs && npm run db:migrate:remote && vite build && wrangler deploy --config dist/server/wrangler.json",
+    "deploy": "npm run db:migrate:remote && vite build && wrangler deploy --config dist/server/wrangler.json",
     "deploy:built": "wrangler deploy --config dist/server/wrangler.json",
     "start": "vinext start",
     "test": "npm run typecheck && npm run build",
@@ -17,6 +16,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:create": "wrangler d1 create auldmoney --location=wnam",
     "db:generate": "drizzle-kit generate",
+    "db:add-parent": "node scripts/add-parent.mjs",
     "db:migrate:local": "wrangler d1 migrations apply auldmoney --local",
     "db:migrate:remote": "wrangler d1 migrations apply auldmoney --remote"
   },

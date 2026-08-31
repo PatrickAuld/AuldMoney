@@ -38,7 +38,12 @@ export async function requireParent() {
     .where(eq(parents.email, user.email.toLowerCase()))
     .limit(1);
 
-  return parent ? user : null;
+  if (!parent) return null;
+
+  // Keep first-run setup idempotent whether the bootstrap parent was inserted
+  // by this request or explicitly with the setup command.
+  await seedChildren();
+  return user;
 }
 
 async function seedChildren() {
