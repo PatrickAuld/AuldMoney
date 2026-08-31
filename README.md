@@ -44,7 +44,7 @@ npm run deploy
 For Workers Builds, use:
 
 - Build command: `npm run build`
-- Deploy command: `npm run db:migrate:remote && npx wrangler deploy`
+- Deploy command: `npm run db:migrate:remote && npm run deploy:built`
 
 The build resolves the D1 UUID using the API token Cloudflare creates for Workers Builds. If you prefer explicit configuration, add `D1_DATABASE_ID` as a build variable, not a secret.
 
