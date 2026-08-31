@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://auldmoney.sites.chatgpt.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://auldmoney.workers.dev",
+  ),
   title: "AuldMoney — Family ledger",
   description: "A simple private ledger for family balances and interest.",
   openGraph: {

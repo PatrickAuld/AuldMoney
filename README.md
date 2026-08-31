@@ -1,29 +1,53 @@
 # AuldMoney
 
-A private, mobile-first family ledger built for Cloudflare Workers and D1.
+A private, mobile-first family ledger running on Cloudflare Workers and D1.
 
-## Product model
+## Architecture
 
-- Parent accounts authenticate with ChatGPT sign-in and are authorized by email.
-- The first authenticated user bootstraps the family and becomes the first parent.
-- Parents can add other parent emails; all parents can see and update every child.
-- Every credit or debit is an immutable signed ledger entry. Balances may be negative.
-- Each child has an annual rate and payment cadence used for the ten-year projection.
-- Interest projections do not silently mutate ledger principal.
+- Vinext and the Cloudflare Vite plugin run the Next.js application in one Worker.
+- D1 stores parents, children, immutable ledger entries, and interest settings.
+- Cloudflare Access authenticates parents and supplies `Cf-Access-Authenticated-User-Email`.
+- The D1 parent allowlist authorizes application access after authentication.
+- `patrick@patrickauld.com` is the only account allowed to bootstrap an empty database.
 
-## Local development
+## One-time Cloudflare setup
+
+Authenticate Wrangler, then create the database:
 
 ```bash
-npm run install:ci
-npm run db:generate
+npx wrangler login
+npm run db:create
+```
+
+The database UUID is not a secret. `scripts/resolve-d1.mjs` discovers it by name during authenticated Cloudflare builds and replaces the inert UUID in `wrangler.jsonc` before deployment.
+
+Create a Cloudflare Access self-hosted application for the Worker hostname. Configure an identity provider such as One-time PIN or Google, and use an Access policy that permits authentication. AuldMoney performs the final parent-email authorization itself.
+
+## Development
+
+```bash
+npm ci
+npm run db:migrate:local
 npm run dev
 ```
 
-The production D1 schema is generated into `drizzle/`. Runtime bindings are declared in `.openai/hosting.json`.
+Local development uses `patrick@patrickauld.com` as the authenticated parent.
 
-## Validation
+## Deployment
+
+Apply production migrations and deploy:
 
 ```bash
-npm exec tsc -- --noEmit
-npm run build
+npm run deploy
 ```
+
+For Workers Builds, use:
+
+- Build command: `npm run build`
+- Deploy command: `npm run db:migrate:remote && npx wrangler deploy`
+
+The build resolves the D1 UUID using the API token Cloudflare creates for Workers Builds. If you prefer explicit configuration, add `D1_DATABASE_ID` as a build variable, not a secret.
+
+## Runtime secrets
+
+AuldMoney currently requires no application runtime secrets. Add future secrets with `npx wrangler secret put NAME` or in the Worker dashboard under Settings → Variables & Secrets.

@@ -6,13 +6,18 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "install:ci": "bash scripts/install-ci.sh",
-    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
-    "build": "bash scripts/build-verified.sh",
-    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && node --test tests/*.test.mjs",
-    "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
+    "dev": "vite",
+    "prebuild": "node scripts/resolve-d1.mjs --optional",
+    "build": "vite build",
+    "deploy": "node scripts/resolve-d1.mjs && npm run db:migrate:remote && vite build && wrangler deploy",
+    "start": "vinext start",
+    "test": "npm run typecheck && npm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "db:create": "wrangler d1 create auldmoney --location=wnam",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply auldmoney --local",
+    "db:migrate:remote": "wrangler d1 migrations apply auldmoney --remote"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

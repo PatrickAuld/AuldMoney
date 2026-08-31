@@ -6,22 +6,26 @@ import {
   ledgerEntries,
   parents,
 } from "@/db/schema";
-import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { env } from "cloudflare:workers";
+import { getCloudflareUser } from "@/app/cloudflare-auth";
 import type { DashboardData, PaymentSchedule } from "./types";
 
 export async function requireParent() {
-  const user = await getChatGPTUser();
+  const user = await getCloudflareUser();
   if (!user) return null;
 
   const db = getDb();
   const existingParents = await db.select().from(parents).limit(1);
   if (!existingParents.length) {
+    if (user.email !== env.BOOTSTRAP_PARENT_EMAIL.trim().toLowerCase()) {
+      return null;
+    }
     await db
       .insert(parents)
       .values({
         id: crypto.randomUUID(),
         email: user.email.toLowerCase(),
-        displayName: user.fullName,
+        displayName: user.displayName,
         addedByEmail: user.email.toLowerCase(),
       })
       .onConflictDoNothing();

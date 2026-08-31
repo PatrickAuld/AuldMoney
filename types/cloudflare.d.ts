@@ -10,5 +10,6 @@ declare interface Fetcher {
 declare module "cloudflare:workers" {
   export const env: {
     DB: D1Database;
+    BOOTSTRAP_PARENT_EMAIL: string;
   };
 }
