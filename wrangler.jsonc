@@ -3,7 +3,9 @@
   "name": "auldmoney",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-08-31",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "preview_urls": true,
   "assets": {
     "directory": "./public",
@@ -20,7 +22,7 @@
     {
       "binding": "DB",
       "database_name": "auldmoney",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_id": "4734fbb1-23c5-4f15-99a2-7e795fd427f1",
       "migrations_dir": "drizzle"
     }
   ]
