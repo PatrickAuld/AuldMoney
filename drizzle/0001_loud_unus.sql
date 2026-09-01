@@ -1,0 +1,1 @@
+ALTER TABLE `interest_settings` ADD `last_applied_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL;

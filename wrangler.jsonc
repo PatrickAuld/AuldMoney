@@ -7,6 +7,11 @@
     "nodejs_compat"
   ],
   "preview_urls": true,
+  "triggers": {
+    "crons": [
+      "0 8 * * *"
+    ]
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",

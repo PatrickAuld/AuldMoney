@@ -8,6 +8,7 @@ A private, mobile-first family ledger running on Cloudflare Workers and D1.
 - D1 stores parents, children, immutable ledger entries, and interest settings.
 - Cloudflare Access authenticates parents and supplies `Cf-Access-Authenticated-User-Email`.
 - The D1 parent allowlist authorizes application access after authentication.
+- A daily Worker cron posts due interest to each child’s ledger at the configured cadence.
 - `patrick@patrickauld.com` is the only account allowed to bootstrap an empty database.
 
 ## One-time Cloudflare setup
@@ -56,6 +57,11 @@ Apply production migrations and deploy:
 ```bash
 npm run deploy
 ```
+
+The scheduled handler runs daily at `08:00 UTC`. It applies any weekly,
+monthly, quarterly, or annual payment periods that became due since the last
+successful run. Ledger IDs are deterministic, so retries cannot post the same
+interest period twice.
 
 For Workers Builds, use:
 

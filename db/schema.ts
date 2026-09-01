@@ -61,6 +61,7 @@ export const interestSettings = sqliteTable(
       .references(() => children.id, { onDelete: "cascade" }),
     annualRateBps: integer("annual_rate_bps").notNull().default(0),
     paymentSchedule: text("payment_schedule").notNull().default("monthly"),
+    lastAppliedAt: text("last_applied_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedByEmail: text("updated_by_email").notNull(),
     updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },

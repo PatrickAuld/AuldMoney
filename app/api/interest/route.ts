@@ -29,6 +29,7 @@ export async function PUT(request: Request) {
       childId: parsed.data.childId,
       annualRateBps: parsed.data.annualRateBps,
       paymentSchedule: parsed.data.paymentSchedule,
+      lastAppliedAt: sql`CURRENT_TIMESTAMP`,
       updatedByEmail: user.email.toLowerCase(),
     })
     .onConflictDoUpdate({
@@ -36,6 +37,12 @@ export async function PUT(request: Request) {
       set: {
         annualRateBps: parsed.data.annualRateBps,
         paymentSchedule: parsed.data.paymentSchedule,
+        lastAppliedAt: sql`CASE
+          WHEN ${interestSettings.annualRateBps} != ${parsed.data.annualRateBps}
+            OR ${interestSettings.paymentSchedule} != ${parsed.data.paymentSchedule}
+          THEN CURRENT_TIMESTAMP
+          ELSE ${interestSettings.lastAppliedAt}
+        END`,
         updatedByEmail: user.email.toLowerCase(),
         updatedAt: sql`CURRENT_TIMESTAMP`,
       },

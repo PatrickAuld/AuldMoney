@@ -458,7 +458,7 @@ function ChildView({
           </label>
           <Button disabled={busy} className="h-11 rounded-xl">{busy ? "Saving…" : "Save rate"}</Button>
         </form>
-        <p className="mt-3 text-xs leading-5 text-muted-foreground">The chart compounds the current balance at this cadence. Ledger principal changes only when a parent records a transaction.</p>
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">The chart compounds the current balance at this cadence. Due interest is posted to the ledger automatically each day.</p>
       </section>
 
       <section className="mt-6">
