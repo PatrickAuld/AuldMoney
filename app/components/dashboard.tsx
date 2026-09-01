@@ -225,6 +225,7 @@ export function Dashboard({
 
         {view.kind === "child" && selectedChild && (
           <ChildView
+            key={selectedChild.id}
             child={selectedChild}
             busy={busy}
             onBack={() => setView({ kind: "home" })}
@@ -388,7 +389,16 @@ function ChildView({
   onTransaction: (kind: "credit" | "debit") => void;
   onSaveInterest: (event: React.FormEvent<HTMLFormElement>, child: ChildView) => void;
 }) {
-  const chartData = useMemo(() => projection(child), [child]);
+  const [rate, setRate] = useState((child.annualRateBps / 100).toFixed(2));
+  const [schedule, setSchedule] = useState<PaymentSchedule>(child.paymentSchedule);
+  const chartData = useMemo(() => {
+    const parsedRate = Number(rate);
+    return projection({
+      ...child,
+      annualRateBps: Number.isFinite(parsedRate) ? Math.round(parsedRate * 100) : child.annualRateBps,
+      paymentSchedule: schedule,
+    });
+  }, [child, rate, schedule]);
   const tenYear = Math.round((chartData.at(-1)?.projected ?? 0) * 100);
   return (
     <>
@@ -436,10 +446,10 @@ function ChildView({
 
         <form className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-[1fr_1fr_auto] sm:items-end" onSubmit={(event) => onSaveInterest(event, child)}>
           <label className="grid gap-2 text-sm font-semibold">Annual rate
-            <div className="relative"><Input name="rate" type="number" min="0" max="100" step="0.01" defaultValue={(child.annualRateBps / 100).toFixed(2)} className="h-11 rounded-xl pr-9" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span></div>
+            <div className="relative"><Input name="rate" type="number" min="0" max="100" step="0.01" value={rate} onChange={(event) => setRate(event.target.value)} className="h-11 rounded-xl pr-9" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span></div>
           </label>
           <label className="grid gap-2 text-sm font-semibold">Payment schedule
-            <NativeSelect name="schedule" defaultValue={child.paymentSchedule} className="h-11 w-full rounded-xl">
+            <NativeSelect name="schedule" value={schedule} onChange={(event) => setSchedule(event.target.value as PaymentSchedule)} className="h-11 w-full rounded-xl">
               <NativeSelectOption value="weekly">Weekly</NativeSelectOption>
               <NativeSelectOption value="monthly">Monthly</NativeSelectOption>
               <NativeSelectOption value="quarterly">Quarterly</NativeSelectOption>
