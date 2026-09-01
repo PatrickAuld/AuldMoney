@@ -102,7 +102,6 @@ export function Dashboard({
 
   const selectedChild =
     view.kind === "child" ? data.children.find((child) => child.id === view.childId) : undefined;
-  const totalCents = data.children.reduce((sum, child) => sum + child.balanceCents, 0);
 
   async function refresh() {
     const response = await fetch("/api/dashboard", { cache: "no-store" });
@@ -219,7 +218,6 @@ export function Dashboard({
           <HomeView
             data={data}
             displayName={displayName}
-            totalCents={totalCents}
             onTransaction={setTransaction}
             onChild={(childId) => setView({ kind: "child", childId })}
           />
@@ -299,25 +297,19 @@ export function Dashboard({
 function HomeView({
   data,
   displayName,
-  totalCents,
   onTransaction,
   onChild,
 }: {
   data: DashboardData;
   displayName: string;
-  totalCents: number;
   onTransaction: (value: Transaction) => void;
   onChild: (childId: string) => void;
 }) {
   return (
     <>
       <section className="mb-7 rounded-[2rem] bg-primary px-6 py-7 text-primary-foreground shadow-[0_18px_50px_-28px_#173f34] sm:px-8">
-        <p className="text-sm text-primary-foreground/70">Good to see you, {displayName}</p>
-        <div className="mt-7 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary-foreground/60">Family total</p>
-            <p className="money mt-1 text-4xl font-semibold sm:text-5xl">{currency(totalCents)}</p>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-primary-foreground/70">Good to see you, {displayName}</p>
           <div className="rounded-2xl bg-white/10 px-3 py-2 text-right text-xs text-primary-foreground/70">
             <span className="block text-lg font-bold text-primary-foreground">{data.children.length}</span>
             kids
