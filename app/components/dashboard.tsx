@@ -55,6 +55,15 @@ function currency(cents: number, compact = false) {
   }).format(cents / 100);
 }
 
+function chartCurrency(dollars: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(dollars);
+}
+
 function shortDate(value: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value));
 }
@@ -82,12 +91,10 @@ async function responseError(response: Response) {
 export function Dashboard({
   initialData,
   currentUserEmail,
-  displayName,
   signOutPath,
 }: {
   initialData: DashboardData;
   currentUserEmail: string;
-  displayName: string;
   signOutPath: string;
 }) {
   const [data, setData] = useState(initialData);
@@ -217,7 +224,6 @@ export function Dashboard({
         {view.kind === "home" && (
           <HomeView
             data={data}
-            displayName={displayName}
             onTransaction={setTransaction}
             onChild={(childId) => setView({ kind: "child", childId })}
           />
@@ -297,27 +303,15 @@ export function Dashboard({
 
 function HomeView({
   data,
-  displayName,
   onTransaction,
   onChild,
 }: {
   data: DashboardData;
-  displayName: string;
   onTransaction: (value: Transaction) => void;
   onChild: (childId: string) => void;
 }) {
   return (
     <>
-      <section className="mb-7 rounded-[2rem] bg-primary px-6 py-7 text-primary-foreground shadow-[0_18px_50px_-28px_#173f34] sm:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-primary-foreground/70">Good to see you, {displayName}</p>
-          <div className="rounded-2xl bg-white/10 px-3 py-2 text-right text-xs text-primary-foreground/70">
-            <span className="block text-lg font-bold text-primary-foreground">{data.children.length}</span>
-            kids
-          </div>
-        </div>
-      </section>
-
       <div className="mb-4 flex items-end justify-between">
         <div>
           <p className="eyebrow">Accounts</p>
@@ -438,7 +432,7 @@ function ChildView({
             </defs>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="year" tickLine={false} axisLine={false} interval={1} />
-            <YAxis hide domain={["auto", "auto"]} />
+            <YAxis width={52} tickLine={false} axisLine={false} domain={["auto", "auto"]} tickFormatter={chartCurrency} />
             <ChartTooltip content={<ChartTooltipContent formatter={(value) => <span className="font-mono font-semibold">{currency(Number(value) * 100)}</span>} />} />
             <Area type="monotone" dataKey="projected" stroke="var(--color-projected)" strokeWidth={3} fill="url(#projected-fill)" />
           </AreaChart>

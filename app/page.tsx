@@ -52,7 +52,6 @@ export default async function Home() {
     <Dashboard
       initialData={data}
       currentUserEmail={user.email.toLowerCase()}
-      displayName={user.displayName}
       signOutPath={cloudflareAccessLogoutPath}
     />
   );
