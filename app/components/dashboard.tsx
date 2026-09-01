@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -77,10 +77,13 @@ function projection(child: ChildView) {
   };
   const annualRate = child.annualRateBps / 10_000;
   const compounds = periods[child.paymentSchedule];
-  return Array.from({ length: 11 }, (_, year) => ({
-    year: year === 0 ? "Now" : `${year}y`,
-    projected: Math.round(child.balanceCents * Math.pow(1 + annualRate / compounds, compounds * year)) / 100,
-  }));
+  return Array.from({ length: 7 }, (_, month) => {
+    const completedPeriods = Math.floor((compounds * month) / 12);
+    return {
+      month: month === 0 ? "Now" : `${month}m`,
+      projected: Math.round(child.balanceCents * Math.pow(1 + annualRate / compounds, completedPeriods)) / 100,
+    };
+  });
 }
 
 async function responseError(response: Response) {
@@ -109,6 +112,33 @@ export function Dashboard({
 
   const selectedChild =
     view.kind === "child" ? data.children.find((child) => child.id === view.childId) : undefined;
+
+  useEffect(() => {
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), auldmoneyView: { kind: "home" } },
+      "",
+    );
+    const onPopState = (event: PopStateEvent) => {
+      const historyView = event.state?.auldmoneyView as View | undefined;
+      setView(historyView ?? { kind: "home" });
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function navigate(nextView: View) {
+    if (JSON.stringify(nextView) === JSON.stringify(view)) return;
+    window.history.pushState(
+      { ...(window.history.state ?? {}), auldmoneyView: nextView },
+      "",
+    );
+    setView(nextView);
+  }
+
+  function backToHome() {
+    if (view.kind === "home") return;
+    window.history.back();
+  }
 
   async function refresh() {
     const response = await fetch("/api/dashboard", { cache: "no-store" });
@@ -200,7 +230,7 @@ export function Dashboard({
     <main className="min-h-screen pb-24 md:pb-10">
       <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 md:py-8">
         <header className="mb-7 flex items-center justify-between">
-          <button className="group flex items-center gap-3 text-left" onClick={() => setView({ kind: "home" })}>
+          <button className="group flex items-center gap-3 text-left" onClick={backToHome}>
             <span className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Landmark className="size-5" />
             </span>
@@ -209,7 +239,7 @@ export function Dashboard({
               <span className="block text-xs text-muted-foreground">Family ledger</span>
             </span>
           </button>
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setView({ kind: "settings" })} aria-label="Open settings">
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate({ kind: "settings" })} aria-label="Open settings">
             <Settings className="size-5" />
           </Button>
         </header>
@@ -225,7 +255,7 @@ export function Dashboard({
           <HomeView
             data={data}
             onTransaction={setTransaction}
-            onChild={(childId) => setView({ kind: "child", childId })}
+            onChild={(childId) => navigate({ kind: "child", childId })}
           />
         )}
 
@@ -234,7 +264,7 @@ export function Dashboard({
             key={selectedChild.id}
             child={selectedChild}
             busy={busy}
-            onBack={() => setView({ kind: "home" })}
+            onBack={backToHome}
             onTransaction={(kind) => setTransaction({ childId: selectedChild.id, kind })}
             onSaveInterest={saveInterest}
           />
@@ -248,7 +278,7 @@ export function Dashboard({
             parentEmail={parentEmail}
             childName={childName}
             busy={busy}
-            onBack={() => setView({ kind: "home" })}
+            onBack={backToHome}
             onParentEmail={setParentEmail}
             onChildName={setChildName}
             onAddParent={addParent}
@@ -260,10 +290,10 @@ export function Dashboard({
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-sm justify-around">
-          <button className={`flex min-w-24 flex-col items-center gap-1 rounded-xl py-1.5 text-xs font-semibold ${view.kind !== "settings" ? "text-primary" : "text-muted-foreground"}`} onClick={() => setView({ kind: "home" })}>
+          <button className={`flex min-w-24 flex-col items-center gap-1 rounded-xl py-1.5 text-xs font-semibold ${view.kind !== "settings" ? "text-primary" : "text-muted-foreground"}`} onClick={backToHome}>
             <WalletCards className="size-5" /> Balances
           </button>
-          <button className={`flex min-w-24 flex-col items-center gap-1 rounded-xl py-1.5 text-xs font-semibold ${view.kind === "settings" ? "text-primary" : "text-muted-foreground"}`} onClick={() => setView({ kind: "settings" })}>
+          <button className={`flex min-w-24 flex-col items-center gap-1 rounded-xl py-1.5 text-xs font-semibold ${view.kind === "settings" ? "text-primary" : "text-muted-foreground"}`} onClick={() => navigate({ kind: "settings" })}>
             <Settings className="size-5" /> Settings
           </button>
         </div>
@@ -415,10 +445,10 @@ function ChildView({
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="eyebrow">Interest projection</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em]">Ten-year growth</h2>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em]">Six-month growth</h2>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">At year 10</p>
+            <p className="text-xs text-muted-foreground">At month 6</p>
             <p className="money font-bold">{currency(tenYear)}</p>
           </div>
         </div>
@@ -431,7 +461,7 @@ function ChildView({
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
-            <XAxis dataKey="year" tickLine={false} axisLine={false} interval={1} />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} interval={0} />
             <YAxis width={52} tickLine={false} axisLine={false} domain={["auto", "auto"]} tickFormatter={chartCurrency} />
             <ChartTooltip content={<ChartTooltipContent formatter={(value) => <span className="font-mono font-semibold">{currency(Number(value) * 100)}</span>} />} />
             <Area type="monotone" dataKey="projected" stroke="var(--color-projected)" strokeWidth={3} fill="url(#projected-fill)" />
