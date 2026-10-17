@@ -59,7 +59,7 @@ export async function applyDueInterest(db: D1Database, now = new Date()) {
       COALESCE(SUM(ledger_entries.amount_cents), 0) AS balance_cents
     FROM interest_settings AS settings
     JOIN children ON children.id = settings.child_id
-    LEFT JOIN ledger_entries ON ledger_entries.child_id = settings.child_id
+    LEFT JOIN ledger_entries ON ledger_entries.child_id = settings.child_id AND ledger_entries.account_type = 'virtual'
     GROUP BY settings.child_id
   `).all() as { results: InterestSetting[] };
 
@@ -83,11 +83,12 @@ export async function applyDueInterest(db: D1Database, now = new Date()) {
         statements.push(
           db.prepare(`
             INSERT OR IGNORE INTO ledger_entries
-              (id, child_id, amount_cents, comment, effective_at, created_by_email)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (id, child_id, account_type, amount_cents, comment, effective_at, created_by_email)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
           `).bind(
             `interest:${setting.child_id}:${effectiveAt}`,
             setting.child_id,
+            "virtual",
             interestCents,
             `${scheduleLabel[setting.payment_schedule]} interest at ${(setting.annual_rate_bps / 100).toFixed(2)}%`,
             effectiveAt,
