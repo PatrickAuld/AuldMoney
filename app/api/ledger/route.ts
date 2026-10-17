@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Child not found." }, { status: 404 });
   }
 
+  try {
   const [entry] = await getDb()
     .insert(ledgerEntries)
     .values({
@@ -36,4 +37,12 @@ export async function POST(request: Request) {
     .returning();
 
   return Response.json({ entry }, { status: 201 });
+  } catch (error) {
+    console.error("Ledger write failed", error);
+    const message = error instanceof Error ? error.message : String(error);
+    if (/no such column: account_type|no column named account_type|has no column named account_type/i.test(message)) {
+      return Response.json({ error: "Database upgrade required: apply the pending D1 migration before recording transactions." }, { status: 503 });
+    }
+    return Response.json({ error: "Unable to save transaction. Check the server logs; no confirmation of a saved entry was received." }, { status: 500 });
+  }
 }
