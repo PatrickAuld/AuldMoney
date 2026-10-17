@@ -15,6 +15,13 @@
       "when": 1788221546789,
       "tag": "0001_loud_unus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792260000000,
+      "tag": "0002_two_accounts",
+      "breakpoints": true
     }
   ]
 }
