@@ -59,7 +59,7 @@ export async function applyDueInterest(db: D1Database, now = new Date()) {
       COALESCE(SUM(ledger_entries.amount_cents), 0) AS balance_cents
     FROM interest_settings AS settings
     JOIN children ON children.id = settings.child_id
-    LEFT JOIN ledger_entries ON ledger_entries.child_id = settings.child_id AND ledger_entries.account_type = 'virtual'
+    LEFT JOIN ledger_entries ON ledger_entries.child_id = settings.child_id AND (ledger_entries.account_type IS NULL OR ledger_entries.account_type != 'cash')
     GROUP BY settings.child_id
   `).all() as { results: InterestSetting[] };
 
