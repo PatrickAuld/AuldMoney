@@ -11,7 +11,7 @@
     "deploy": "npm run db:migrate:remote && vite build && wrangler deploy --config dist/server/wrangler.json",
     "deploy:built": "wrangler deploy --config dist/server/wrangler.json",
     "start": "vinext start",
-    "test": "npm run typecheck && npm run build",
+    "test": "node --test tests/*.test.mjs && npm run typecheck && npm run build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:create": "wrangler d1 create auldmoney --location=wnam",
