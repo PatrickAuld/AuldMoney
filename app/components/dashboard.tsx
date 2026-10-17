@@ -155,7 +155,12 @@ export function Dashboard({
         headers: { "content-type": "application/json", ...init.headers },
       });
       if (!response.ok) throw new Error(await responseError(response));
-      await refresh();
+      try {
+        await refresh();
+      } catch (refreshError) {
+        console.error("Saved mutation but dashboard refresh failed", refreshError);
+        setError("Transaction saved, but balances could not refresh. Reload the page; do not submit again.");
+      }
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong.");
