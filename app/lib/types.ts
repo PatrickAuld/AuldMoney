@@ -1,3 +1,5 @@
+export type AccountType = "virtual" | "cash";
+
 export type PaymentSchedule = "weekly" | "monthly" | "quarterly" | "annually";
 
 export type LedgerEntryView = {
@@ -5,6 +7,7 @@ export type LedgerEntryView = {
   childId: string;
   childName: string;
   amountCents: number;
+  accountType: AccountType;
   comment: string;
   effectiveAt: string;
   createdByEmail: string;
@@ -15,6 +18,7 @@ export type ChildView = {
   name: string;
   accent: string;
   balanceCents: number;
+  cashBalanceCents: number;
   annualRateBps: number;
   paymentSchedule: PaymentSchedule;
   entries: LedgerEntryView[];
