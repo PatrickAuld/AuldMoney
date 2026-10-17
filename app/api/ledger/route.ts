@@ -5,6 +5,7 @@ import { childExists, requireParent } from "@/app/lib/data";
 
 const schema = z.object({
   childId: z.string().min(1),
+  accountType: z.enum(["virtual", "cash"]).default("virtual"),
   amountCents: z.number().int().min(-100_000_000).max(100_000_000).refine(Boolean),
   comment: z.string().trim().max(280).default(""),
 });
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
       id: crypto.randomUUID(),
       childId: parsed.data.childId,
       amountCents: parsed.data.amountCents,
+      accountType: parsed.data.accountType,
       comment: parsed.data.comment,
       effectiveAt: new Date().toISOString(),
       createdByEmail: user.email.toLowerCase(),
