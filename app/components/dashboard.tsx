@@ -31,10 +31,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import type { ChildView, DashboardData, PaymentSchedule } from "@/app/lib/types";
+import type { ChildView, DashboardData, PaymentSchedule, AccountType } from "@/app/lib/types";
 
 type View = { kind: "home" } | { kind: "child"; childId: string } | { kind: "settings" };
-type Transaction = { childId: string; kind: "credit" | "debit" } | null;
+type Transaction = { childId: string; kind: "credit" | "debit"; accountType: AccountType } | null;
 
 const accentStyles: Record<string, string> = {
   gold: "bg-[#e6c46f] text-[#3d3219]",
@@ -177,6 +177,7 @@ export function Dashboard({
       method: "POST",
       body: JSON.stringify({
         childId: transaction.childId,
+        accountType: transaction.accountType,
         amountCents: transaction.kind === "credit" ? cents : -cents,
         comment,
       }),
@@ -265,7 +266,7 @@ export function Dashboard({
             child={selectedChild}
             busy={busy}
             onBack={backToHome}
-            onTransaction={(kind) => setTransaction({ childId: selectedChild.id, kind })}
+            onTransaction={(kind, accountType) => setTransaction({ childId: selectedChild.id, kind, accountType })}
             onSaveInterest={saveInterest}
           />
         )}
@@ -306,7 +307,7 @@ export function Dashboard({
               {transaction?.kind === "credit" ? "Add money" : "Deduct money"}
             </DialogTitle>
             <DialogDescription>
-              {data.children.find((child) => child.id === transaction?.childId)?.name}’s ledger updates immediately.
+              {data.children.find((child) => child.id === transaction?.childId)?.name}’s {transaction?.accountType === "cash" ? "piggy bank" : "virtual account"} updates immediately.
             </DialogDescription>
           </DialogHeader>
           <form className="mt-2 grid gap-4" onSubmit={saveTransaction}>
@@ -360,17 +361,20 @@ function HomeView({
                 </span>
                 <p className="text-sm font-semibold text-muted-foreground">{child.name}</p>
                 <p className={`money mt-0.5 text-3xl font-semibold ${child.balanceCents < 0 ? "text-destructive" : "text-foreground"}`}>{currency(child.balanceCents)}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{(child.annualRateBps / 100).toFixed(2)}% · {child.paymentSchedule}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Virtual · {(child.annualRateBps / 100).toFixed(2)}% · {child.paymentSchedule}</p>
+                <p className={`money mt-3 text-lg font-semibold ${child.cashBalanceCents < 0 ? "text-destructive" : "text-foreground"}`}>Piggy bank: {currency(child.cashBalanceCents)}</p>
               </div>
               <ChevronRight className="mt-2 size-5 text-muted-foreground" />
             </button>
             <div className="grid grid-cols-2 gap-2 border-t bg-muted/45 p-3">
-              <Button variant="secondary" className="h-12 rounded-xl bg-card" onClick={() => onTransaction({ childId: child.id, kind: "credit" })}>
+              <Button variant="secondary" className="h-12 rounded-xl bg-card" onClick={() => onTransaction({ childId: child.id, kind: "credit", accountType: "virtual" })}>
                 <ArrowUp /> Credit
               </Button>
-              <Button variant="secondary" className="h-12 rounded-xl bg-card" onClick={() => onTransaction({ childId: child.id, kind: "debit" })}>
+              <Button variant="secondary" className="h-12 rounded-xl bg-card" onClick={() => onTransaction({ childId: child.id, kind: "debit", accountType: "virtual" })}>
                 <ArrowDown /> Debit
               </Button>
+              <Button variant="outline" className="h-12 rounded-xl" onClick={() => onTransaction({ childId: child.id, kind: "credit", accountType: "cash" })}><ArrowUp /> Cash in</Button>
+              <Button variant="outline" className="h-12 rounded-xl" onClick={() => onTransaction({ childId: child.id, kind: "debit", accountType: "cash" })}><ArrowDown /> Cash out</Button>
             </div>
           </article>
         ))}
@@ -387,7 +391,7 @@ function HomeView({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{entry.comment || (entry.amountCents >= 0 ? "Credit" : "Debit")}</p>
-                <p className="text-xs text-muted-foreground">{entry.childName} · {shortDate(entry.effectiveAt)}</p>
+                <p className="text-xs text-muted-foreground">{entry.childName} · {entry.accountType === "cash" ? "Piggy bank" : "Virtual"} · {shortDate(entry.effectiveAt)}</p>
               </div>
               <p className={`money text-sm font-bold ${entry.amountCents < 0 ? "text-destructive" : "text-primary"}`}>{entry.amountCents >= 0 ? "+" : ""}{currency(entry.amountCents)}</p>
             </div>
@@ -410,7 +414,7 @@ function ChildView({
   child: ChildView;
   busy: boolean;
   onBack: () => void;
-  onTransaction: (kind: "credit" | "debit") => void;
+  onTransaction: (kind: "credit" | "debit", accountType: AccountType) => void;
   onSaveInterest: (event: React.FormEvent<HTMLFormElement>, child: ChildView) => void;
 }) {
   const [rate, setRate] = useState((child.annualRateBps / 100).toFixed(2));
@@ -430,15 +434,19 @@ function ChildView({
       <section className="rounded-[2rem] bg-primary p-6 text-primary-foreground sm:p-8">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-primary-foreground/65">{child.name}’s balance</p>
+            <p className="text-sm text-primary-foreground/65">{child.name}’s virtual balance</p>
             <h1 className={`money mt-1 text-4xl font-semibold sm:text-5xl ${child.balanceCents < 0 ? "text-[#ffc4b7]" : ""}`}>{currency(child.balanceCents)}</h1>
           </div>
           <span className={`flex size-12 items-center justify-center rounded-2xl text-xl font-black ${accentStyles[child.accent] ?? accentStyles.gold}`}>{child.name.slice(0, 1)}</span>
         </div>
         <div className="mt-7 grid grid-cols-2 gap-3">
-          <Button className="h-12 rounded-xl bg-white text-primary hover:bg-white/90" onClick={() => onTransaction("credit")}><ArrowUp /> Credit</Button>
-          <Button className="h-12 rounded-xl bg-white/12 text-white hover:bg-white/20" onClick={() => onTransaction("debit")}><ArrowDown /> Debit</Button>
+          <Button className="h-12 rounded-xl bg-white text-primary hover:bg-white/90" onClick={() => onTransaction("credit", "virtual")}><ArrowUp /> Credit</Button>
+          <Button className="h-12 rounded-xl bg-white/12 text-white hover:bg-white/20" onClick={() => onTransaction("debit", "virtual")}><ArrowDown /> Debit</Button>
         </div>
+      </section>
+
+      <section className="mt-6 rounded-[1.75rem] border bg-card p-5 sm:p-7">
+        <div className="flex items-center justify-between gap-3"><div><p className="eyebrow">Piggy bank</p><p className={`money mt-1 text-3xl font-semibold ${child.cashBalanceCents < 0 ? "text-destructive" : ""}`}>{currency(child.cashBalanceCents)}</p></div><div className="flex gap-2"><Button variant="outline" onClick={() => onTransaction("credit", "cash")}><ArrowUp /> Cash in</Button><Button variant="outline" onClick={() => onTransaction("debit", "cash")}><ArrowDown /> Cash out</Button></div></div>
       </section>
 
       <section className="mt-6 rounded-[1.75rem] border bg-card p-5 sm:p-7">
@@ -491,7 +499,7 @@ function ChildView({
         <div className="mt-4 overflow-hidden rounded-[1.5rem] border bg-card">
           {child.entries.length ? child.entries.map((entry, index) => (
             <div key={entry.id} className={`flex items-center gap-3 px-4 py-4 ${index ? "border-t" : ""}`}>
-              <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{entry.comment || (entry.amountCents >= 0 ? "Credit" : "Debit")}</p><p className="text-xs text-muted-foreground">{shortDate(entry.effectiveAt)} · {entry.createdByEmail}</p></div>
+              <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{entry.comment || (entry.amountCents >= 0 ? "Credit" : "Debit")}</p><p className="text-xs text-muted-foreground">{entry.accountType === "cash" ? "Piggy bank" : "Virtual"} · {shortDate(entry.effectiveAt)} · {entry.createdByEmail}</p></div>
               <p className={`money text-sm font-bold ${entry.amountCents < 0 ? "text-destructive" : "text-primary"}`}>{entry.amountCents >= 0 ? "+" : ""}{currency(entry.amountCents)}</p>
             </div>
           )) : <p className="px-5 py-8 text-center text-sm text-muted-foreground">No transactions yet.</p>}
