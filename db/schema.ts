@@ -39,6 +39,7 @@ export const ledgerEntries = sqliteTable(
       .notNull()
       .references(() => children.id, { onDelete: "cascade" }),
     amountCents: integer("amount_cents").notNull(),
+    accountType: text("account_type").notNull().default("virtual"),
     comment: text("comment").notNull().default(""),
     effectiveAt: text("effective_at").notNull(),
     createdByEmail: text("created_by_email").notNull(),
